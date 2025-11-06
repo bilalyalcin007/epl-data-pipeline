@@ -1,0 +1,8 @@
+requests
+beautifulsoup4
+pandas
+pyarrow
+azure-storage-blob
+SQLAlchemy
+psycopg2-binary
+python-dotenv
