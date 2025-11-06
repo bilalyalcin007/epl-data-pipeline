@@ -1,0 +1,56 @@
+name: EPL Data Pipeline
+
+on:
+  schedule:
+    # Runs every Saturday and Sunday at 00:00 UTC
+    - cron: "0 0 * * 6,0"
+  workflow_dispatch: {}  # Allows manual trigger from the Actions tab
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      # 👉 If your script expects environment variables, set them from GitHub Secrets here.
+      - name: Run pipeline
+        env:
+          AZURE_STORAGE_ACCOUNT_NAME: ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
+          AZURE_STORAGE_ACCOUNT_KEY: ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}
+          AZURE_BLOB_CONTAINER: ${{ secrets.AZURE_BLOB_CONTAINER }}
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          # Optional: full connection string if your code uses one variable
+          POSTGRES_CONN_STR: ${{ secrets.POSTGRES_CONN_STR }}
+        run: |
+          # 🔁 Replace the script paths below with the actual entry point(s) in your repo
+          # Examples:
+          # python src/scrape_epl.py
+          # python src/upload_to_azure.py
+          # python src/push_to_postgres.py
+          if [ -f pipeline.py ]; then python pipeline.py;           elif [ -f main.py ]; then python main.py;           else echo "Update workflow: point to your actual script file(s)"; exit 1; fi
